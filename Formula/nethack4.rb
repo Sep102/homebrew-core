@@ -12,6 +12,8 @@ class Nethack4 < Formula
     sha256 "2dcacbd514524bcac4c52df5c334f5b23e065f01371f6777b001ce8a1826df17" => :yosemite
   end
 
+  patch :DATA
+
   # Assumes C11 _Noreturn is available for clang:
   # http://trac.nethack4.org/ticket/568
   fails_with :clang do
@@ -27,7 +29,7 @@ class Nethack4 < Formula
 
     mkdir "build"
     cd "build" do
-      system "../aimake", "--with=jansson", "--without=gui",
+      system "../aimake", "--with=jansson",
         "-i", prefix, "--directory-layout=prefix",
         "--override-directory", "staterootdir=#{var}"
     end
@@ -37,3 +39,18 @@ class Nethack4 < Formula
     system "#{bin}/nethack4", "--version"
   end
 end
+
+__END__
+diff --git a/aimake.rules b/aimake.rules
+index 5f5146d..15609db 100644
+--- a/aimake.rules
++++ b/aimake.rules
+@@ -187,7 +187,7 @@ $playfieldutils = qr/dlb|dgn_comp|lev_comp/;
+         },
+         _uncursed_plugins_to_link_statically => {
+             object => qr=^bpath:libuncursed/src/plugins/
+-                      (?:wincon|tty)\.c/.+\Q$objext\E$=xs,
++                      (?:sdl)\.c/.+\Q$objext\E$=xs,
+             output => 'optionset:_uncursed_static_plugins',
+             object_dependency => 'outdepends',
+             outdepends => 'optpath::'
