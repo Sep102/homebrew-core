@@ -49,6 +49,9 @@ class Openttd < Formula
     sha256 "cbd559318f653a2e7aaadad2fd7eb1097b24a68ad42cf417c4ca530b34d2a776"
   end
 
+  # Disables software mouse cursor
+  patch :DATA
+
   def install
     system "./configure", "--prefix-dir=#{prefix}"
     system "make", "bundle"
@@ -72,3 +75,63 @@ class Openttd < Formula
     assert_match /OpenTTD #{version}\n/, shell_output("#{bin}/openttd -h")
   end
 end
+
+__END__
+diff --git a/src/video/cocoa/cocoa_v.mm b/src/video/cocoa/cocoa_v.mm
+index 35cd350..18d7343 100644
+--- a/src/video/cocoa/cocoa_v.mm
++++ b/src/video/cocoa/cocoa_v.mm
+@@ -82,9 +82,6 @@ - (void)stopEngine
+  */
+ - (void)launchGameEngine: (NSNotification*) note
+ {
+-	/* Setup cursor for the current _game_mode. */
+-	[ _cocoa_subdriver->cocoaview resetCursorRects ];
+-
+	/* Hand off to main application code. */
+	QZ_GameLoop();
+
+@@ -862,16 +859,6 @@ - (void)clearTrackingRect
+	[ self removeTrackingRect:trackingtag ];
+ }
+ /**
+- * Declare responsibility for the cursor within our application rect
+- */
+-- (void)resetCursorRects
+-{
+-	[ super resetCursorRects ];
+-	[ self clearTrackingRect ];
+-	[ self setTrackingRect ];
+-	[ self addCursorRect:[ self bounds ] cursor:(_game_mode == GM_BOOTSTRAP ? [ NSCursor arrowCursor ] : [ NSCursor clearCocoaCursor ]) ];
+-}
+-/**
+  * Prepare for moving the application window
+  */
+ - (void)viewWillMoveToWindow:(NSWindow *)win
+
+diff --git a/src/video/cocoa/cocoa_v.h b/src/video/cocoa/cocoa_v.h
+index 8722257..ce508ed 100644
+--- a/src/video/cocoa/cocoa_v.h
++++ b/src/video/cocoa/cocoa_v.h
+@@ -251,7 +251,6 @@ uint QZ_ListModes(OTTD_Point *modes, uint max_modes, CGDirectDisplayID display_i
+ - (BOOL)becomeFirstResponder;
+ - (void)setTrackingRect;
+ - (void)clearTrackingRect;
+-- (void)resetCursorRects;
+ - (void)viewWillMoveToWindow:(NSWindow *)win;
+ - (void)viewDidMoveToWindow;
+ - (void)mouseEntered:(NSEvent *)theEvent;
+
+diff --git a/src/gfx.cpp b/src/gfx.cpp
+index 34e5f43..dbcc69f 100644
+--- a/src/gfx.cpp
++++ b/src/gfx.cpp
+@@ -1214,6 +1214,8 @@ void UndrawMouseCursor()
+
+ void DrawMouseCursor()
+ {
++	return;
++
+ #if defined(WINCE)
+	/* Don't ever draw the mouse for WinCE, as we work with a stylus */
+	return;
